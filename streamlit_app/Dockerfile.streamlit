@@ -1,0 +1,47 @@
+# syntax=docker/dockerfile:1
+
+# Base image with an argument for Python version
+ARG PYTHON_VERSION=3.11-slim
+FROM python:${PYTHON_VERSION} as base
+
+# Optimize Python behavior in Docker
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Working directory for the app
+WORKDIR /streamlit_app_dir
+
+# Create a non-privileged user for security
+ARG UID=10001
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/home/appuser" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    appuser
+
+# Create the app directory with appropriate permissions
+RUN mkdir -p /home/appuser && chown appuser:appuser /home/appuser
+
+# Install dependencies with cache optimizations
+COPY requirements.txt /streamlit_app_dir/
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --no-cache-dir -r requirements.txt
+
+# Copy the Streamlit app code and related modules into the container
+COPY streamlit_app/ /streamlit_app_dir/streamlit_app
+# Copy the entire app directory, including all subdirectories and __init__.py files
+
+
+# Switch to non-privileged user
+USER appuser
+
+# Expose Streamlit's default port
+EXPOSE 8501
+
+# Start the Streamlit app
+CMD ["python", "-m", "debugpy", "--wait-for-client", "--listen", "0.0.0.0:5679", \
+     "-m", "streamlit", "run", "streamlit_app/streamlit_main_combined.py", \
+     "--server.port=8501", "--server.address=0.0.0.0"]

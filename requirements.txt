@@ -1,0 +1,12 @@
+fastapi          # FastAPI framework for the backend
+httpx            # Async HTTP client for making API requests
+uvicorn          # ASGI server for running FastAPI
+pyyaml           # YAML configuration file support
+pydantic         # Data validation and settings management
+debugpy          # Debugging support for VS Code
+streamlit        # Streamlit framework for the frontend
+Pillow
+google-genai==1.7.0  # Google GenAI library for AI model interaction
+langgraph==0.3.21 
+langchain-google-genai==2.1.2
+langgraph-prebuilt==0.1.7

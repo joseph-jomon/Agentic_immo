@@ -1,0 +1,21 @@
+# config/settings.yaml
+vectorizer_service:
+  text_endpoint: "https://realtime.vector.kundalin.com/vectorize/text"
+  image_endpoint: "https://realtime.vector.kundalin.com/vectorize/image"
+
+database_service:
+  text_search_endpoint: "https://vdb.kundalin.com/search_text"
+  image_search_endpoint: "https://vdb.kundalin.com/search_image"
+  combined_search_endpoint: "https://vdb.kundalin.com/combined_search/"
+
+content_service:
+  retrieve_endpoint: "https://api.production.cloudios.flowfact-prod.cloud/entity-service/entities"
+
+authentication_service:
+  api_key: "som api key  # Optional if static
+
+api:
+  text_vector_search_endpoint: "http://vector_search_service_debug:8000/api/v1/text_vector_search"
+  image_vector_search_endpoint: "http://vector_search_service_debug:8000/api/v1/image_vector_search"
+  image_vector_search_endpoint: "http://vector_search_service_debug:8000/api/v1/combined_vector_search"
+

@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  proxy:
+    image: traefik:v3.1
+    command: 
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entryPoints.api.address=:80"
+      - "--entryPoints.web-secure.address=:443" # Declares the web-secure entrypoint in Traefik
+      - "--certificatesresolvers.myleresolver.acme.email=josephjomon401@gmail.com"
+      - "--certificatesresolvers.myleresolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.myleresolver.acme.tlschallenge=true"
+
+    ports:
+      - "80:80"
+      - "443:443" #Docker sends requests on port 443 to Traefik on port 443
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+
+  vector_search_service:
+    build: .
+    container_name: vector_search_service
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000  # Remove debugging options for production
+    ports:
+      - "8000:8000"
+    environment:
+      # Set any production-specific environment variables here
+      - ENVIRONMENT=production
+    restart: always
+    labels:
+      - "traefik.http.routers.vector_search_service.entryPoints=web-secure"
+      - "traefik.http.routers.vector_search_service.rule=Host(`api.kundalin.com`)"
+      - "traefik.http.routers.vector_search_service.tls=true"
+      - "traefik.http.routers.vector_search_service.tls.certresolver=myleresolver"
+      - "traefik.http.services.vector_search_service.loadbalancer.server.port=8000"
+
+  streamlit:
+    build:
+      context: .
+      dockerfile: streamlit_app/Dockerfile.streamlit
+    container_name: streamlit_app
+    ports:
+      - "8501:8501"
+    depends_on:
+      - vector_search_service
+    environment:
+      # Set any production-specific environment variables here
+      - ENVIRONMENT=production
+    restart: always
+    command: ["streamlit", "run", "streamlit_app/streamlit_main_combined.py","--server.port=8501", "--server.address=0.0.0.0"]
+    labels:
+      - "traefik.http.routers.router_rule_01.entryPoints=web-secure" # gave name to the router(router_rule_01) and specified its entrypoint(api)
+      - "traefik.http.routers.router_rule_01.rule=Host(`hausuch.kundalin.com`)" # specified the routing rule of the router(router_rule_01)
+      - "traefik.http.routers.router_rule_01.service=service_01" # Explicit definition of a router(router_rule_01) with one service(service_01)
+      - "traefik.http.routers.router_rule_01.tls=true"
+      - "traefik.http.routers.router_rule_01.tls.certresolver=myleresolver"
+      - "traefik.http.services.service_01.loadbalancer.server.port=8501" # Definition of a Service(service_01) running on the container [https://doc.traefik.io/traefik/routing/providers/docker/#service-definition]

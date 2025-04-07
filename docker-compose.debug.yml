@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  vector_search_service:
+    build: .
+    container_name: vector_search_service_debug
+    command: python -m debugpy --listen 0.0.0.0:5678 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+      - "5678:5678"  # Expose debug port for VS Code
+    volumes:
+      - .:/code
+
+  # Add Streamlit app service
+  streamlit:
+    build:
+      context: .
+      dockerfile: streamlit_app/Dockerfile.streamlit  # Specify the custom Dockerfile for Streamlit
+    container_name: streamlit_app_debug
+    ports:
+      - "8501:8501"
+      - "5679:5679"
+    volumes:
+      - ./streamlit_app:/app  # Mount the streamlit_app directory
+    depends_on:
+      - vector_search_service
